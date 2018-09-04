@@ -1712,7 +1712,7 @@ class EpubReader(object):
 
 # WRITE
 
-def write_epub(name, book, options=None):
+def write_epub(name, book, options=None, close_after= True):
     """
     Creates epub file with the content defined in EpubBook.
 
@@ -1728,7 +1728,7 @@ def write_epub(name, book, options=None):
     epub.process()
 
     try:
-        return epub.write()
+        return epub.write(close_after)
     except IOError:
         pass
 
