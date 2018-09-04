@@ -20,6 +20,7 @@ import logging
 import uuid
 import posixpath as zip_path
 import os.path
+import io
 from collections import OrderedDict
 
 try:
@@ -81,6 +82,11 @@ COVER_XML = six.b('''<?xml version="1.0" encoding="UTF-8"?>
 
 IMAGE_MEDIA_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/svg+xml']
 
+class BytesIOCustom(io.BytesIO):
+    def writestr(self, path, data):
+        if type(data) != bytes:
+            data = data.encode('utf-8')
+        return self.write(data)
 
 # TOC and navigation elements
 
@@ -865,7 +871,8 @@ class EpubWriter(object):
         'play_order': {
             'enabled': False,
             'start_from': 1
-        }
+        },
+        'output_type' : 'file',
     }
 
     def __init__(self, name, book, options=None):
@@ -1356,14 +1363,20 @@ class EpubWriter(object):
 
     def write(self):
         # check for the option allowZip64
-        self.out = zipfile.ZipFile(self.file_name, 'w', zipfile.ZIP_DEFLATED)
-        self.out.writestr('mimetype', 'application/epub+zip', compress_type=zipfile.ZIP_STORED)
+        if self.options['output_type'] == 'stream':
+            self.out = BytesIOCustom()
+
+        elif self.options['output_type'] == 'file':
+            self.out = zipfile.ZipFile(self.file_name, 'w', zipfile.ZIP_DEFLATED)
+            self.out.writestr('mimetype', 'application/epub+zip', compress_type=zipfile.ZIP_STORED)
 
         self._write_container()
         self._write_opf()
         self._write_items()
 
         self.out.close()
+
+        return self.out
 
 
 class EpubReader(object):
@@ -1714,7 +1727,7 @@ def write_epub(name, book, options=None):
     epub.process()
 
     try:
-        epub.write()
+        return epub.write()
     except IOError:
         pass
 
