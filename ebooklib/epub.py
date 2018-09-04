@@ -1361,7 +1361,7 @@ class EpubWriter(object):
             else:
                 self.out.writestr('%s' % item.file_name, item.get_content())
 
-    def write(self):
+    def write(self, close_after= True):
         # check for the option allowZip64
         if self.options['output_type'] == 'stream':
             self.out = BytesIOCustom()
@@ -1374,7 +1374,8 @@ class EpubWriter(object):
         self._write_opf()
         self._write_items()
 
-        self.out.close()
+        if close_after:
+            self.out.close()
 
         return self.out
 
